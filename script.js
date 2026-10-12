@@ -1,205 +1,136 @@
-/* =========================================
-   🤡 CLOWN LOGIN — script.js
-   ========================================= */
+// Estado global de la aplicación
+let currentFilter = 'all';
+let photos = [];
+let tempSelectedFileUrl = null;
 
-// ─── Confetti Generator ────────────────────
-(function generateConfetti() {
-  const wrapper = document.getElementById('confettiWrapper');
-  const colors = ['#FF2D55','#FF9500','#FFD60A','#34C759','#007AFF','#AF52DE','#FF375F','#5AC8FA'];
-  for (let i = 0; i < 50; i++) {
-    const piece = document.createElement('span');
-    piece.className = 'confetti-piece';
-    piece.style.cssText = `
-      left: ${Math.random() * 100}%;
-      width: ${6 + Math.random() * 10}px;
-      height: ${8 + Math.random() * 14}px;
-      background: ${colors[Math.floor(Math.random() * colors.length)]};
-      animation-duration: ${4 + Math.random() * 8}s;
-      animation-delay: ${Math.random() * 6}s;
-      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
-    `;
-    wrapper.appendChild(piece);
-  }
-})();
-
-// ─── Nariz interactiva ────────────────────
-const nose = document.getElementById('clownNose');
-let honkCount = 0;
-const honkSounds = ['🎺','🎵','🎶','🎼','🎷'];
-
-nose.addEventListener('click', () => {
-  honkCount++;
-  nose.style.transform = 'translateX(-50%) scale(1.5)';
-  setTimeout(() => { nose.style.transform = ''; }, 200);
-
-  // Mostrar nota musical flotante
-  const note = document.createElement('span');
-  note.textContent = honkSounds[Math.floor(Math.random() * honkSounds.length)];
-  note.style.cssText = `
-    position: fixed;
-    font-size: 1.4rem;
-    pointer-events: none;
-    z-index: 9999;
-    animation: floatNote 1s ease-out forwards;
-    left: ${Math.random() * 60 + 20}%;
-    top: 40%;
-  `;
-  document.body.appendChild(note);
-  setTimeout(() => note.remove(), 1000);
-
-  if (honkCount === 5) {
-    showToast('🤡 ¡Eres todo un payaso! 🎪', 'info');
-    honkCount = 0;
-  }
-});
-
-// CSS extra para animación de nota
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes floatNote {
-    0%   { opacity: 1; transform: translateY(0) scale(1); }
-    100% { opacity: 0; transform: translateY(-80px) scale(1.5); }
-  }
-`;
-document.head.appendChild(style);
-
-// ─── Toggle contraseña ─────────────────────
-const togglePass = document.getElementById('togglePass');
-const passwordInput = document.getElementById('password');
-
-togglePass.addEventListener('click', () => {
-  const isHidden = passwordInput.type === 'password';
-  passwordInput.type = isHidden ? 'text' : 'password';
-  togglePass.textContent = isHidden ? '🙈' : '👁️';
-  togglePass.style.transform = 'scale(1.3)';
-  setTimeout(() => { togglePass.style.transform = ''; }, 300);
-});
-
-// ─── Formulario — Submit ───────────────────
-const loginForm = document.getElementById('loginForm');
-const btnEnter  = document.getElementById('btnEnter');
-
-loginForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  const username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value;
-
-  // Validaciones
-  if (!username) {
-    shakeField('fieldUser');
-    showToast('🤡 ¡Ponle tu nombre de payaso!', 'error');
-    return;
-  }
-
-  if (password.length < 4) {
-    shakeField('fieldPass');
-    showToast('🔑 La contraseña es muy corta (mín. 4 caracteres)', 'error');
-    return;
-  }
-
-  // Simular carga
-  btnEnter.classList.add('loading');
-  btnEnter.disabled = true;
-
-  await sleep(2000);
-
-  btnEnter.classList.remove('loading');
-  btnEnter.disabled = false;
-
-  // Simular login exitoso
-  showToast('🎪 ¡Bienvenido a la función, ' + username + '! 🤹', 'success');
-  launchCelebration();
-});
-
-// ─── Shake field helper ─────────────────────
-function shakeField(id) {
-  const el = document.getElementById(id);
-  el.classList.add('shake');
-  el.addEventListener('animationend', () => el.classList.remove('shake'), { once: true });
+// Alternar visibilidad de contraseña en el Login
+function togglePassword() {
+    const passwordInput = document.getElementById('password');
+    const eyeIcon = document.querySelector('.toggle-password');
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        eyeIcon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
 }
 
-// ─── Toast helper ──────────────────────────
-let toastTimer = null;
-function showToast(msg, type = 'info') {
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.className = `toast ${type} show`;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    toast.classList.remove('show');
-  }, 3200);
+// Simular el inicio de sesión y transición al panel de álbum
+function handleLogin(event) {
+    event.preventDefault();
+    document.getElementById('login-view').classList.remove('active');
+    document.getElementById('album-view').classList.add('active');
+    renderGallery();
 }
 
-// ─── Celebración de login exitoso ──────────
-function launchCelebration() {
-  const wrapper = document.getElementById('confettiWrapper');
-  const colors  = ['#FF2D55','#FF9500','#FFD60A','#34C759','#007AFF','#AF52DE'];
-
-  for (let i = 0; i < 80; i++) {
-    const burst = document.createElement('span');
-    burst.style.cssText = `
-      position: fixed;
-      left: ${Math.random() * 100}%;
-      top: ${Math.random() * 60 + 20}%;
-      font-size: ${1 + Math.random() * 1.5}rem;
-      pointer-events: none;
-      z-index: 9999;
-      animation: burstOut ${0.6 + Math.random() * 1}s ease-out forwards;
-      animation-delay: ${Math.random() * 0.5}s;
-    `;
-    burst.textContent = ['🎉','🎊','🤡','🎪','🎈','🎀','⭐','🌈'][Math.floor(Math.random() * 8)];
-    document.body.appendChild(burst);
-    setTimeout(() => burst.remove(), 2000);
-  }
-
-  // Animar tarjeta
-  const card = document.getElementById('loginCard');
-  card.style.transition = 'transform 0.3s';
-  card.style.transform = 'scale(1.04) rotate(1deg)';
-  setTimeout(() => {
-    card.style.transform = 'scale(1) rotate(0deg)';
-  }, 400);
+// Funciones del Modal de Subida de Fotos
+function openUploadModal() {
+    document.getElementById('upload-modal').style.display = 'flex';
 }
 
-// Añadir keyframe de celebración
-const celebStyle = document.createElement('style');
-celebStyle.textContent = `
-  @keyframes burstOut {
-    0%   { opacity: 1; transform: scale(0.5) translateY(0); }
-    100% { opacity: 0; transform: scale(2) translateY(-80px); }
-  }
-`;
-document.head.appendChild(celebStyle);
+function closeUploadModal() {
+    document.getElementById('upload-modal').style.display = 'none';
+    document.getElementById('photo-title').value = '';
+    tempSelectedFileUrl = null;
+}
 
-// ─── Enlace "Olvidé contraseña" ───────────
-document.getElementById('forgotLink').addEventListener('click', (e) => {
-  e.preventDefault();
-  showToast('😅 ¡Ay, qué payaso! Contacta al director del circo 🎪', 'info');
-});
+// Manejar la selección local de archivos para simulación visual
+function handleFileSelected(event) {
+    const file = event.target.files[0];
+    if (file) {
+        tempSelectedFileUrl = URL.createObjectURL(file);
+        if (!document.getElementById('photo-title').value) {
+            document.getElementById('photo-title').value = file.name.substring(0, file.name.lastIndexOf('.')) || 'Nuevo recuerdo';
+        }
+    }
+}
 
-// ─── Enlace de registro ────────────────────
-document.getElementById('linkRegister').addEventListener('click', (e) => {
-  e.preventDefault();
-  showToast('🤹 ¡Únete al circo pronto! Función próximamente...', 'info');
-});
+// Confirmar subida y añadir elemento al listado
+function confirmUpload() {
+    const titleInput = document.getElementById('photo-title').value || 'Recuerdo LICC sin título';
+    // Si no seleccionó archivo, asignamos una imagen predeterminada de muestra de investigación/laboratorio
+    const imageUrl = tempSelectedFileUrl || 'https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&w=600&q=80';
 
-// ─── Ojos que siguen el cursor ─────────────
-document.addEventListener('mousemove', (e) => {
-  document.querySelectorAll('.pupil').forEach((pupil) => {
-    const eye = pupil.parentElement;
-    const rect = eye.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const angle = Math.atan2(e.clientY - cy, e.clientX - cx);
-    const dist = 4;
-    const x = Math.cos(angle) * dist;
-    const y = Math.sin(angle) * dist;
-    pupil.style.transform = `translate(${x}px, ${y}px)`;
-  });
-});
+    const newPhoto = {
+        id: Date.now(),
+        title: titleInput,
+        url: imageUrl,
+        date: new Date(),
+        favorite: false
+    };
 
-// ─── Utilidad sleep ─────────────────────────
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+    photos.unshift(newPhoto);
+    closeUploadModal();
+    renderGallery();
+}
+
+// Alternar estado de favorito en una tarjeta
+function toggleFavorite(id) {
+    const photo = photos.find(p => p.id === id);
+    if (photo) {
+        photo.favorite = !photo.favorite;
+        renderGallery();
+    }
+}
+
+// Gestionar filtros activos
+function setFilter(filterType, btnElement) {
+    currentFilter = filterType;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btnElement.classList.add('active');
+    renderGallery();
+}
+
+// Filtrar en tiempo real desde la barra de búsqueda
+function filterPhotos() {
+    renderGallery();
+}
+
+// Renderizado dinámico de la galería y estados vacíos
+function renderGallery() {
+    const query = document.getElementById('search-input') ? document.getElementById('search-input').value.toLowerCase() : '';
+
+    // Aplicar filtros de categoría y búsqueda
+    let filtered = photos.filter(p => {
+        const matchesQuery = p.title.toLowerCase().includes(query);
+        if (currentFilter === 'favorites') return matchesQuery && p.favorite;
+        if (currentFilter === 'recent') {
+            const isRecent = (new Date() - new Date(p.date)) < (24 * 60 * 60 * 1000); // últimas 24 hrs
+            return matchesQuery && isRecent;
+        }
+        return matchesQuery;
+    });
+
+    // Actualizar contadores visuales
+    document.getElementById('photo-counter').innerText = `${photos.length} recuerdos guardados`;
+    document.getElementById('count-all').innerText = photos.length;
+
+    const emptyState = document.getElementById('empty-state');
+    const photosGrid = document.getElementById('photos-grid');
+
+    if (photos.length === 0) {
+        emptyState.style.display = 'flex';
+        photosGrid.style.display = 'none';
+    } else {
+        emptyState.style.display = 'none';
+        photosGrid.style.display = 'grid';
+
+        if (filtered.length === 0) {
+            photosGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #64748b;">No se encontraron recuerdos con esa búsqueda o filtro.</div>`;
+            return;
+        }
+
+        photosGrid.innerHTML = filtered.map(p => `
+            <div class="photo-card">
+                <img src="${p.url}" alt="${p.title}">
+                <div class="photo-card-body">
+                    <span class="photo-card-title">${p.title}</span>
+                    <button class="photo-fav-btn ${p.favorite ? 'favorited' : ''}" onclick="toggleFavorite(${p.id})">
+                        <i class="fa-${p.favorite ? 'solid' : 'regular'} fa-heart"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
 }
