@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🤡 Clown Login — Acceso al Circo</title>
+  <meta name="description" content="Página de login temática de payaso con diseño colorido y animaciones divertidas." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Burbujas de fondo -->
+  <div class="bubbles" aria-hidden="true">
+    <span class="bubble"></span>
+    <span class="bubble"></span>
+    <span class="bubble"></span>
+    <span class="bubble"></span>
+    <span class="bubble"></span>
+    <span class="bubble"></span>
+    <span class="bubble"></span>
+    <span class="bubble"></span>
+    <span class="bubble"></span>
+    <span class="bubble"></span>
+  </div>
+
+  <!-- Confetti decorativo -->
+  <div class="confetti-wrapper" aria-hidden="true" id="confettiWrapper"></div>
+
+  <main class="stage">
+    <div class="login-card" id="loginCard">
+
+      <!-- Cara de payaso -->
+      <div class="clown-face" aria-label="Payaso animado">
+        <div class="face">
+          <div class="eye left-eye">
+            <div class="pupil"></div>
+          </div>
+          <div class="eye right-eye">
+            <div class="pupil"></div>
+          </div>
+          <div class="nose" id="clownNose"></div>
+          <div class="mouth">
+            <div class="smile"></div>
+          </div>
+        </div>
+        <div class="hat">
+          <div class="hat-band"></div>
+          <div class="hat-top"></div>
+          <div class="flower">🌸</div>
+        </div>
+        <div class="hair left-hair"></div>
+        <div class="hair right-hair"></div>
+        <div class="bow-tie">🎀</div>
+      </div>
+
+      <h1 class="title">¡Bienvenido al Circo!</h1>
+      <p class="subtitle">Ingresa tus datos para entrar a la función 🎪</p>
+
+      <form class="login-form" id="loginForm" novalidate>
+
+        <div class="field-group" id="fieldUser">
+          <label for="username" class="field-label">🎭 Usuario</label>
+          <div class="input-wrapper">
+            <span class="input-icon">👤</span>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              class="field-input"
+              placeholder="Tu nombre de payaso..."
+              autocomplete="username"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="field-group" id="fieldPass">
+          <label for="password" class="field-label">🔑 Contraseña Secreta</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔒</span>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="field-input"
+              placeholder="Shhh... es un secreto..."
+              autocomplete="current-password"
+              required
+            />
+            <button type="button" class="toggle-pass" id="togglePass" aria-label="Mostrar contraseña">👁️</button>
+          </div>
+        </div>
+
+        <div class="options-row">
+          <label class="remember-me">
+            <input type="checkbox" id="rememberMe" />
+            <span class="custom-checkbox"></span>
+            Recuérdame 🎈
+          </label>
+          <a href="#" class="forgot-link" id="forgotLink">¿Olvidaste? 😅</a>
+        </div>
+
+        <button type="submit" class="btn-enter" id="btnEnter">
+          <span class="btn-text">¡Entrar a la Función! 🎪</span>
+          <span class="btn-loader" aria-hidden="true"></span>
+        </button>
+
+        <p class="register-prompt">¿No tienes cuenta? <a href="#" class="link-register" id="linkRegister">¡Únete al circo! 🤹</a></p>
+
+      </form>
+
+    </div>
+  </main>
+
+  <!-- Toast de notificación -->
+  <div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
