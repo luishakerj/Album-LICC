@@ -1,0 +1,19 @@
+﻿node.exe : - Downloading configuration data of your Firebase WEB app
+En C:\Users\usuario1\AppData\Roaming\npm\firebase.ps1: 24 Carácter: 5
++     & "node$exe"  "$basedir/node_modules/firebase-tools/lib/bin/fireb ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (- Downloading c...irebase WEB app:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+√ Downloading configuration data of your Firebase WEB app
+{
+  "projectId": "album-134c6",
+  "appId": "1:954529318676:web:e14662553a3d28523aa401",
+  "storageBucket": "album-134c6.firebasestorage.app",
+  "apiKey": "AIzaSyBY4rQDIhLWi12Hm2v0KFVSIrdPe-TVC8U",
+  "authDomain": "album-134c6.firebaseapp.com",
+  "messagingSenderId": "954529318676",
+  "measurementId": "G-SGNW0QX10Z",
+  "projectNumber": "954529318676",
+  "version": "2"
+}

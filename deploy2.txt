@@ -1,0 +1,10 @@
+﻿
+[1m[37m===[39m Deploying to 'album-134c6'...[22m
+
+[36m[1mi [22m[39m deploying [1mfirestore[22m
+[36m[1mi  firestore:[22m[39m ensuring required API [1mfirestore.googleapis.com[22m is enabled...
+[36m[1mi  firestore:[22m[39m ensuring required API [1mfirestore.googleapis.com[22m is enabled...
+[36m[1mi  cloud.firestore:[22m[39m checking [1mfirestore.rules[22m for compilation errors...
+
+[1m[31mError:[39m[22m Compilation error in [1mfirestore.rules[22m:
+[E] 31:3 - mismatched input 'return' expecting {'function', 'import', 'service'}

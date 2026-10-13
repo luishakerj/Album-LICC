@@ -1,0 +1,15 @@
+﻿node.exe : - Preparing the list of your Firebase apps
+En C:\Users\usuario1\AppData\Roaming\npm\firebase.ps1: 24 Carácter: 5
++     & "node$exe"  "$basedir/node_modules/firebase-tools/lib/bin/fireb ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (- Preparing the...r Firebase apps:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+√ Preparing the list of your Firebase apps
+[90m┌──────────────────[39m[90m┬───────────────────────────────────────────[39m[90m┬──────────┐[39m
+[90m│[39m[32m App Display Name [39m[90m│[39m[32m App ID                                    [39m[90m│[39m[32m Platform [39m[90m│[39m
+[90m├──────────────────[39m[90m┼───────────────────────────────────────────[39m[90m┼──────────┤[39m
+[90m│[39m album.1          [90m│[39m 1:954529318676:web:e14662553a3d28523aa401 [90m│[39m WEB      [90m│[39m
+[90m└──────────────────[39m[90m┴───────────────────────────────────────────[39m[90m┴──────────┘[39m
+
+1 app(s) total.

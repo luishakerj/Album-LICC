@@ -1,7 +1,67 @@
 // Estado global de la aplicación
+import { suscribirRecuerdos, crearRecuerdo, actualizarRecuerdo, eliminarRecuerdo } from './firestore-data.js';
+
 let currentFilter = 'all';
 let photos = [];
 let tempSelectedFileUrl = null;
+let editingPhotoId = null;
+let deletingPhotoId = null;
+let detailsPhotoId = null;
+
+// Exponer las funciones usadas en atributos onclick del HTML
+window.handleLogin = handleLogin;
+window.togglePassword = togglePassword;
+window.openUploadModal = openUploadModal;
+window.closeUploadModal = closeUploadModal;
+window.handleFileSelected = handleFileSelected;
+window.confirmUpload = confirmUpload;
+window.filterPhotos = filterPhotos;
+window.setFilter = setFilter;
+window.toggleFavorite = toggleFavorite;
+window.openEditModal = openEditModal;
+window.closeEditModal = closeEditModal;
+window.saveEdit = saveEdit;
+window.openDetailsModal = openDetailsModal;
+window.closeDetailsModal = closeDetailsModal;
+window.openDeleteModal = openDeleteModal;
+window.closeDeleteModal = closeDeleteModal;
+window.confirmDelete = confirmDelete;
+
+// Utilidades de formato
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+function formatDateLong(value) {
+    if (!value) return 'Sin fecha';
+    // Acepta 'YYYY-MM-DD' (input date) o Date/Timestamp
+    const parts = String(value).split('-');
+    const d = parts.length === 3
+        ? new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+        : aFecha(value);
+    if (!d || isNaN(d)) return 'Sin fecha';
+    return `${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`;
+}
+
+function formatDateTime(value) {
+    const d = aFecha(value);
+    if (!d || isNaN(d)) return '—';
+    const hora = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    return `${formatDateLong(d)} · ${hora}`;
+}
+
+function toInputDate(value) {
+    const d = aFecha(value);
+    if (!d || isNaN(d)) return '';
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mes}-${dia}`;
+}
+
+// Las fechas de Firestore (Timestamp) llegan como objetos con toDate()
+function aFecha(value) {
+    if (!value) return null;
+    if (typeof value.toDate === 'function') return value.toDate();
+    return new Date(value);
+}
 
 // Alternar visibilidad de contraseña en el Login
 function togglePassword() {
@@ -21,7 +81,7 @@ function handleLogin(event) {
     event.preventDefault();
     document.getElementById('login-view').classList.remove('active');
     document.getElementById('album-view').classList.add('active');
-    renderGallery();
+    cargarRecuerdos();
 }
 
 // Funciones del Modal de Subida de Fotos
@@ -32,6 +92,9 @@ function openUploadModal() {
 function closeUploadModal() {
     document.getElementById('upload-modal').style.display = 'none';
     document.getElementById('photo-title').value = '';
+    document.getElementById('photo-location').value = '';
+    document.getElementById('photo-date').value = '';
+    document.getElementById('photo-description').value = '';
     tempSelectedFileUrl = null;
 }
 
@@ -46,32 +109,190 @@ function handleFileSelected(event) {
     }
 }
 
-// Confirmar subida y añadir elemento al listado
-function confirmUpload() {
+// Confirmar subida y guardar el recuerdo en Firestore
+async function confirmUpload() {
     const titleInput = document.getElementById('photo-title').value || 'Recuerdo LICC sin título';
     // Si no seleccionó archivo, asignamos una imagen predeterminada de muestra de investigación/laboratorio
     const imageUrl = tempSelectedFileUrl || 'https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&w=600&q=80';
 
-    const newPhoto = {
-        id: Date.now(),
+    const locationInput = document.getElementById('photo-location').value.trim();
+    const dateInput = document.getElementById('photo-date').value;
+    const descriptionInput = document.getElementById('photo-description').value.trim();
+
+    const datos = {
         title: titleInput,
         url: imageUrl,
-        date: new Date(),
-        favorite: false
+        takenAt: dateInput || toInputDate(new Date()),
+        location: locationInput || 'Sin ubicación',
+        description: descriptionInput || 'Sin descripción.'
     };
 
-    photos.unshift(newPhoto);
     closeUploadModal();
-    renderGallery();
+    try {
+        // Firestore notifica el alta a través de la suscripción en tiempo real
+        await crearRecuerdo(datos);
+    } catch (error) {
+        console.error('Error al guardar en Firestore:', error);
+        alert('No se pudo guardar el recuerdo en la base de datos.');
+    }
 }
 
 // Alternar estado de favorito en una tarjeta
-function toggleFavorite(id) {
+async function toggleFavorite(id) {
     const photo = photos.find(p => p.id === id);
-    if (photo) {
-        photo.favorite = !photo.favorite;
-        renderGallery();
+    if (!photo) return;
+    try {
+        await actualizarRecuerdo(id, { favorite: !photo.favorite });
+    } catch (error) {
+        console.error('Error al actualizar el favorito:', error);
     }
+}
+
+// ================= EDITAR (UPDATE) =================
+function openEditModal(id) {
+    const photo = photos.find(p => p.id === id);
+    if (!photo) return;
+
+    editingPhotoId = id;
+    document.getElementById('edit-photo-title').value = photo.title;
+    document.getElementById('edit-photo-location').value = photo.location === 'Sin ubicación' ? '' : (photo.location || '');
+    document.getElementById('edit-photo-date').value = photo.takenAt || '';
+    document.getElementById('edit-photo-description').value = photo.description === 'Sin descripción.' ? '' : (photo.description || '');
+    document.getElementById('edit-preview-img').src = photo.url;
+    document.getElementById('edit-modal').style.display = 'flex';
+    document.getElementById('edit-photo-title').focus();
+}
+
+function closeEditModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+    document.getElementById('edit-photo-title').value = '';
+    document.getElementById('edit-photo-location').value = '';
+    document.getElementById('edit-photo-date').value = '';
+    document.getElementById('edit-photo-description').value = '';
+    document.getElementById('edit-preview-img').src = '';
+    editingPhotoId = null;
+}
+
+async function saveEdit() {
+    const photo = photos.find(p => p.id === editingPhotoId);
+    if (!photo) return;
+
+    const newTitle = document.getElementById('edit-photo-title').value.trim();
+    if (!newTitle) {
+        alert('El título no puede estar vacío.');
+        return;
+    }
+
+    const cambios = {
+        title: newTitle,
+        location: document.getElementById('edit-photo-location').value.trim() || 'Sin ubicación',
+        takenAt: document.getElementById('edit-photo-date').value || photo.takenAt,
+        description: document.getElementById('edit-photo-description').value.trim() || 'Sin descripción.',
+        editedAt: new Date()
+    };
+
+    const id = editingPhotoId;
+    closeEditModal();
+    try {
+        await actualizarRecuerdo(id, cambios);
+    } catch (error) {
+        console.error('Error al guardar los cambios:', error);
+        alert('No se pudieron guardar los cambios en la base de datos.');
+    }
+}
+
+// ================= VER DETALLES (READ) =================
+function openDetailsModal(id) {
+    const photo = photos.find(p => p.id === id);
+    if (!photo) return;
+
+    detailsPhotoId = id;
+    document.getElementById('details-img').src = photo.url;
+    document.getElementById('details-title').textContent = photo.title;
+    document.getElementById('details-description').textContent = photo.description || 'Sin descripción.';
+    document.getElementById('details-location').textContent = photo.location || 'Sin ubicación';
+    document.getElementById('details-date').textContent = formatDateLong(photo.takenAt);
+    document.getElementById('details-created').textContent = formatDateTime(photo.createdAt);
+    document.getElementById('details-edited').textContent = photo.editedAt ? formatDateTime(photo.editedAt) : 'Nunca editado';
+    document.getElementById('details-status').textContent = photo.favorite ? 'Marcado como favorito' : 'En el álbum';
+    document.getElementById('details-id').textContent = photo.id;
+
+    const statusRow = document.getElementById('details-status');
+    statusRow.classList.toggle('is-favorite', !!photo.favorite);
+
+    // El botón Editar del modal abre el editor de este mismo recuerdo
+    document.getElementById('details-edit-btn').onclick = () => {
+        closeDetailsModal();
+        openEditModal(id);
+    };
+
+    document.getElementById('details-modal').style.display = 'flex';
+}
+
+function closeDetailsModal() {
+    document.getElementById('details-modal').style.display = 'none';
+    document.getElementById('details-img').src = '';
+    detailsPhotoId = null;
+}
+
+// ================= ELIMINAR (DELETE) =================
+function openDeleteModal(id) {
+    const photo = photos.find(p => p.id === id);
+    if (!photo) return;
+
+    deletingPhotoId = id;
+    document.getElementById('delete-photo-name').textContent = `"${photo.title}"`;
+    document.getElementById('delete-modal').style.display = 'flex';
+}
+
+function closeDeleteModal() {
+    document.getElementById('delete-modal').style.display = 'none';
+    document.getElementById('delete-photo-name').textContent = '';
+    deletingPhotoId = null;
+}
+
+async function confirmDelete() {
+    if (deletingPhotoId === null) return;
+    const id = deletingPhotoId;
+    closeDeleteModal();
+    try {
+        await eliminarRecuerdo(id);
+    } catch (error) {
+        console.error('Error al eliminar el recuerdo:', error);
+        alert('No se pudo eliminar el recuerdo de la base de datos.');
+    }
+}
+
+// ================= CARGA DESDE FIRESTORE =================
+let suscripcionActiva = false;
+
+function cargarRecuerdos() {
+    if (suscripcionActiva) return;
+    suscripcionActiva = true;
+    suscribirRecuerdos(
+        (recuerdos) => {
+            photos = recuerdos;
+            renderGallery();
+        },
+        (error) => {
+            console.error('Error al leer de Firestore:', error);
+            mostrarAvisoConexion(error);
+        }
+    );
+}
+
+// Aviso visible si la base de datos no responde o las reglas la bloquean
+function mostrarAvisoConexion(error) {
+    const contenedor = document.getElementById('gallery-container');
+    if (!contenedor || document.getElementById('db-warning')) return;
+    const aviso = document.createElement('div');
+    aviso.id = 'db-warning';
+    aviso.className = 'db-warning';
+    aviso.innerHTML = `<i class="fa-solid fa-database"></i>
+        <div><strong>No se pudo conectar con Firestore.</strong>
+        <span>Revisa que la base de datos esté creada y que las reglas permitan leer la colección "recuerdos".</span></div>`;
+    contenedor.prepend(aviso);
+    console.error('Detalle:', error && error.message);
 }
 
 // Gestionar filtros activos
@@ -93,10 +314,11 @@ function renderGallery() {
 
     // Aplicar filtros de categoría y búsqueda
     let filtered = photos.filter(p => {
-        const matchesQuery = p.title.toLowerCase().includes(query);
+        const matchesQuery = (p.title || '').toLowerCase().includes(query);
         if (currentFilter === 'favorites') return matchesQuery && p.favorite;
         if (currentFilter === 'recent') {
-            const isRecent = (new Date() - new Date(p.date)) < (24 * 60 * 60 * 1000); // últimas 24 hrs
+            const creado = aFecha(p.createdAt);
+            const isRecent = creado && (new Date() - creado) < (24 * 60 * 60 * 1000); // últimas 24 hrs
             return matchesQuery && isRecent;
         }
         return matchesQuery;
@@ -123,10 +345,29 @@ function renderGallery() {
 
         photosGrid.innerHTML = filtered.map(p => `
             <div class="photo-card">
-                <img src="${p.url}" alt="${p.title}">
+                <div class="photo-card-media">
+                    <img src="${p.url}" alt="${p.title}" onclick="openDetailsModal('${p.id}')">
+                    <div class="photo-card-actions">
+                        <button class="photo-action-btn view-btn" title="Ver detalles" onclick="openDetailsModal('${p.id}')">
+                            <i class="fa-solid fa-expand"></i>
+                        </button>
+                        <button class="photo-action-btn edit-btn" title="Editar" onclick="openEditModal('${p.id}')">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button class="photo-action-btn delete-btn" title="Eliminar" onclick="openDeleteModal('${p.id}')">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                    ${p.favorite ? '<span class="photo-card-fav-badge"><i class="fa-solid fa-heart"></i></span>' : ''}
+                </div>
                 <div class="photo-card-body">
-                    <span class="photo-card-title">${p.title}</span>
-                    <button class="photo-fav-btn ${p.favorite ? 'favorited' : ''}" onclick="toggleFavorite(${p.id})">
+                    <div class="photo-card-texts">
+                        <span class="photo-card-title">${p.title}</span>
+                        <span class="photo-card-meta">
+                            <i class="fa-solid fa-location-dot"></i> ${p.location || 'Sin ubicación'}
+                        </span>
+                    </div>
+                    <button class="photo-fav-btn ${p.favorite ? 'favorited' : ''}" title="Favorito" onclick="toggleFavorite('${p.id}')">
                         <i class="fa-${p.favorite ? 'solid' : 'regular'} fa-heart"></i>
                     </button>
                 </div>

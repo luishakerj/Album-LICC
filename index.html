@@ -178,6 +178,21 @@
           <label>Título del recuerdo</label>
           <input type="text" id="photo-title" placeholder="Ej. Toma de muestras en laboratorio...">
         </div>
+        <div class="form-row-modal">
+          <div class="form-group-modal">
+            <label>Lugar</label>
+            <input type="text" id="photo-location" placeholder="Ej. Laboratorio LICC">
+          </div>
+          <div class="form-group-modal">
+            <label>Fecha</label>
+            <input type="date" id="photo-date">
+          </div>
+        </div>
+        <div class="form-group-modal">
+          <label>Descripción</label>
+          <textarea id="photo-description" rows="3"
+            placeholder="Cuenta la historia detrás de este recuerdo..."></textarea>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" onclick="closeUploadModal()">Cancelar</button>
@@ -186,7 +201,118 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <!-- Modal para EDITAR un recuerdo existente -->
+  <div id="edit-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Editar recuerdo</h3>
+        <button class="close-btn" onclick="closeEditModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="edit-preview-wrapper">
+          <img id="edit-preview-img" src="" alt="Vista previa">
+        </div>
+        <div class="form-group-modal">
+          <label>Título del recuerdo</label>
+          <input type="text" id="edit-photo-title" placeholder="Título del recuerdo...">
+        </div>
+        <div class="form-row-modal">
+          <div class="form-group-modal">
+            <label>Lugar</label>
+            <input type="text" id="edit-photo-location" placeholder="Ej. Laboratorio LICC">
+          </div>
+          <div class="form-group-modal">
+            <label>Fecha</label>
+            <input type="date" id="edit-photo-date">
+          </div>
+        </div>
+        <div class="form-group-modal">
+          <label>Descripción</label>
+          <textarea id="edit-photo-description" rows="3"
+            placeholder="Cuenta la historia detrás de este recuerdo..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeEditModal()">Cancelar</button>
+        <button class="btn-confirm" onclick="saveEdit()">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de CONFIRMACIÓN para ELIMINAR un recuerdo -->
+  <div id="delete-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-card modal-card-small">
+      <div class="modal-header">
+        <h3>Eliminar recuerdo</h3>
+        <button class="close-btn" onclick="closeDeleteModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="delete-warning">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <p>¿Seguro que deseas eliminar <strong id="delete-photo-name"></strong>? Esta acción no se puede deshacer.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
+        <button class="btn-danger" onclick="confirmDelete()"><i class="fa-solid fa-trash"></i> Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de DETALLES con cuadro de datos -->
+  <div id="details-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-card modal-card-details">
+      <div class="details-hero">
+        <img id="details-img" src="" alt="Recuerdo">
+        <button class="close-btn details-close-btn" onclick="closeDetailsModal()">&times;</button>
+        <span class="details-badge"><i class="fa-solid fa-camera-retro"></i> Recuerdo LICC</span>
+      </div>
+      <div class="modal-body details-body">
+        <h3 id="details-title"></h3>
+        <p class="details-description" id="details-description"></p>
+
+        <!-- Cuadro de datos -->
+        <div class="details-data-box">
+          <div class="details-data-row">
+            <i class="fa-solid fa-location-dot"></i>
+            <span class="details-data-label">Lugar</span>
+            <span class="details-data-value" id="details-location"></span>
+          </div>
+          <div class="details-data-row">
+            <i class="fa-regular fa-calendar"></i>
+            <span class="details-data-label">Capturada</span>
+            <span class="details-data-value" id="details-date"></span>
+          </div>
+          <div class="details-data-row">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span class="details-data-label">Registrada</span>
+            <span class="details-data-value" id="details-created"></span>
+          </div>
+          <div class="details-data-row">
+            <i class="fa-solid fa-pen"></i>
+            <span class="details-data-label">Última edición</span>
+            <span class="details-data-value" id="details-edited"></span>
+          </div>
+          <div class="details-data-row">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span class="details-data-label">Estado</span>
+            <span class="details-data-value" id="details-status"></span>
+          </div>
+          <div class="details-data-row">
+            <i class="fa-solid fa-hashtag"></i>
+            <span class="details-data-label">Identificador</span>
+            <span class="details-data-value" id="details-id"></span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer details-footer">
+        <button class="btn-cancel" onclick="closeDetailsModal()">Cerrar</button>
+        <button class="btn-confirm" id="details-edit-btn"><i class="fa-solid fa-pen"></i> Editar</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="script.js"></script>
 </body>
 
 </html>

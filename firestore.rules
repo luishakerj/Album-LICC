@@ -1,0 +1,109 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: recuerdos
+// Document ID: auto-generated (addDoc)
+// Fields:
+//   - title:       string    (required, 1..120 chars)
+//   - url:         string    (required, URL http(s), <= 2048 chars)
+//   - takenAt:     string    (required, formato 'YYYY-MM-DD')
+//   - location:    string    (required, 1..120 chars)
+//   - description: string    (required, 0..1000 chars)
+//   - favorite:    bool      (required, solo se puede alternar)
+//   - createdAt:   timestamp (required, inmutable, debe ser serverTimestamp)
+//   - editedAt:    timestamp | null (opcional, se sella al editar)
+//
+// IMPORTANTE — modelo de acceso:
+// Esta app NO usa Firebase Auth (el login de la interfaz es simulado y no
+// crea una sesión de Firebase). Por eso no se puede exigir `request.auth != null`
+// sin romper la aplicación: las reglas validan la FORMA del documento, no la
+// identidad de quien escribe. Si más adelante añades Firebase Auth, cambia
+// `permitirEscritura()` por una comprobación de `request.auth != null`.
+//
+// ===============================================================
+// Helper Functions
+// ===============================================================
+
+// Formato de fecha 'YYYY-MM-DD'function esFechaValida(valor) {
+  return valor is string && valor.matches('^\\d{4}-\\d{2}-\\d{2}$');
+}
+
+// URL http(s) de longitud razonable
+function esUrlValida(valor) {
+  return valor is string &&
+         valor.size() <= 2048 &&
+         (valor.matches('^https://.*') || valor.matches('^http://.*'));
+}
+
+// Comprueba que existe y es un string dentro del rango pedido
+function stringEnRango(datos, campo, min, max) {
+  return campo in datos &&
+         datos[campo] is string &&
+         datos[campo].size() >= min &&
+         datos[campo].size() <= max;
+}
+
+// El documento debe tener exactamente estos campos, ni uno más
+function tieneSoloCamposPermitidos(datos) {
+  return datos.keys().hasOnly([
+    'title', 'url', 'takenAt', 'location', 'description',
+    'favorite', 'createdAt', 'editedAt'
+  ]);
+}
+
+// Validador de dominio: se usa tanto en create como en update
+function esRecuerdoValido(datos) {
+  return tieneSoloCamposPermitidos(datos) &&
+         stringEnRango(datos, 'title', 1, 120) &&
+         stringEnRango(datos, 'location', 1, 120) &&
+         stringEnRango(datos, 'description', 0, 1000) &&
+         esUrlValida(datos.url) &&
+         esFechaValida(datos.takenAt) &&
+         datos.favorite is bool &&
+         // editedAt: opcional, pero si está debe ser timestamp o null
+         (!('editedAt' in datos) || datos.editedAt == null || datos.editedAt is timestamp);
+}
+
+// Campos que no pueden cambiar después de crear el documento
+function camposInmutablesIntactos() {
+  return request.resource.data.createdAt == resource.data.createdAt &&
+         request.resource.data.url == resource.data.url;
+}
+
+// ===============================================================
+// Reglas
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /recuerdos/{recuerdoId} {
+
+      // LEER: la galería carga todos los recuerdos al iniciar sesión
+      allow read: if true;
+
+      // CREAR: el documento debe ser válido y createdAt debe ser la hora del
+      // servidor (impide fechas manipuladas por el cliente)
+      allow create: if esRecuerdoValido(request.resource.data) &&
+                       request.resource.data.createdAt == request.time;
+
+      // ACTUALIZAR: validación completa + createdAt y url inmutables.
+      // Solo se permiten los campos que la app edita realmente.
+      allow update: if esRecuerdoValido(request.resource.data) &&
+                       camposInmutablesIntactos() &&
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['title', 'location', 'description', 'takenAt', 'favorite', 'editedAt']);
+
+      // ELIMINAR
+      allow delete: if true;
+    }
+
+    // Todo lo demás queda denegado por defecto
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
