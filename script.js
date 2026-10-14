@@ -1,9 +1,11 @@
 // Estado global de la aplicación
 import { suscribirRecuerdos, crearRecuerdo, actualizarRecuerdo, eliminarRecuerdo } from './firestore-data.js';
+import { comprimirImagen } from './image-utils.js';
 
 let currentFilter = 'all';
 let photos = [];
 let tempSelectedFileUrl = null;
+let selectedFileObj = null;
 let editingPhotoId = null;
 let deletingPhotoId = null;
 let detailsPhotoId = null;
@@ -95,45 +97,110 @@ function closeUploadModal() {
     document.getElementById('photo-location').value = '';
     document.getElementById('photo-date').value = '';
     document.getElementById('photo-description').value = '';
-    tempSelectedFileUrl = null;
+
+    const fileInput = document.getElementById('file-input');
+    if (fileInput) fileInput.value = '';
+
+    const defaultDropzone = document.getElementById('dropzone-default');
+    const previewDropzone = document.getElementById('dropzone-preview');
+    if (defaultDropzone) defaultDropzone.style.display = 'block';
+    if (previewDropzone) previewDropzone.style.display = 'none';
+
+    const confirmBtn = document.querySelector('#upload-modal .btn-confirm');
+    if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = 'Guardar en Álbum';
+    }
+
+    if (tempSelectedFileUrl) {
+        URL.revokeObjectURL(tempSelectedFileUrl);
+        tempSelectedFileUrl = null;
+    }
+    selectedFileObj = null;
 }
 
-// Manejar la selección local de archivos para simulación visual
+// Manejar la selección local de archivos para previsualización
 function handleFileSelected(event) {
     const file = event.target.files[0];
     if (file) {
+        selectedFileObj = file;
+        if (tempSelectedFileUrl) URL.revokeObjectURL(tempSelectedFileUrl);
         tempSelectedFileUrl = URL.createObjectURL(file);
+
+        // Mostrar vista previa en la dropzone
+        const defaultDropzone = document.getElementById('dropzone-default');
+        const previewDropzone = document.getElementById('dropzone-preview');
+        const previewImg = document.getElementById('upload-preview-img');
+        const previewFilename = document.getElementById('upload-preview-filename');
+
+        if (defaultDropzone) defaultDropzone.style.display = 'none';
+        if (previewDropzone) previewDropzone.style.display = 'flex';
+        if (previewImg) previewImg.src = tempSelectedFileUrl;
+        if (previewFilename) {
+            const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+            previewFilename.textContent = `${file.name} (${sizeMb} MB)`;
+        }
+
         if (!document.getElementById('photo-title').value) {
             document.getElementById('photo-title').value = file.name.substring(0, file.name.lastIndexOf('.')) || 'Nuevo recuerdo';
         }
     }
 }
 
-// Confirmar subida y guardar el recuerdo en Firestore
+// Confirmar subida: procesa y comprime la imagen localmente y guarda el recuerdo en Firestore
 async function confirmUpload() {
     const titleInput = document.getElementById('photo-title').value || 'Recuerdo LICC sin título';
-    // Si no seleccionó archivo, asignamos una imagen predeterminada de muestra de investigación/laboratorio
-    const imageUrl = tempSelectedFileUrl || 'https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&w=600&q=80';
-
     const locationInput = document.getElementById('photo-location').value.trim();
     const dateInput = document.getElementById('photo-date').value;
     const descriptionInput = document.getElementById('photo-description').value.trim();
+    const confirmBtn = document.querySelector('#upload-modal .btn-confirm');
 
-    const datos = {
-        title: titleInput,
-        url: imageUrl,
-        takenAt: dateInput || toInputDate(new Date()),
-        location: locationInput || 'Sin ubicación',
-        description: descriptionInput || 'Sin descripción.'
-    };
+    // Estado visual de carga
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+    }
 
-    closeUploadModal();
     try {
+        let imageUrl = 'https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&w=600&q=80';
+
+        // Si se seleccionó un archivo físico, comprimirlo a Base64 optimizado
+        if (selectedFileObj) {
+            if (confirmBtn) {
+                confirmBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles fa-bounce"></i> Optimizando foto...';
+            }
+            imageUrl = await comprimirImagen(selectedFileObj, {
+                maxWidth: 1000,
+                maxHeight: 1000,
+                quality: 0.75
+            });
+        }
+
+        const datos = {
+            title: titleInput,
+            url: imageUrl,
+            takenAt: dateInput || toInputDate(new Date()),
+            location: locationInput || 'Sin ubicación',
+            description: descriptionInput || 'Sin descripción.'
+        };
+
+        if (confirmBtn) {
+            confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando en Firestore...';
+        }
+
         // Firestore notifica el alta a través de la suscripción en tiempo real
         await crearRecuerdo(datos);
+
+        closeUploadModal();
     } catch (error) {
-        console.error('Error al guardar en Firestore:', error);
-        alert('No se pudo guardar el recuerdo en la base de datos.');
+        console.error('Error al guardar el recuerdo:', error);
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = 'Guardar en Álbum';
+        }
+
+        const errMsg = error?.message || 'Error desconocido';
+        alert('No se pudo guardar el recuerdo en la base de datos: ' + errMsg);
     }
 }
 

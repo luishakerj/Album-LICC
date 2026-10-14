@@ -1,0 +1,14 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /recuerdos/{fileName} {
+      // Permitir lectura a todos (necesario para ver las fotos en la galería pública)
+      allow read: if true;
+
+      // Permitir subir imágenes de hasta 10MB sin autenticación (ya que el login es simulado en cliente)
+      allow write: if request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "album-134c6"
-  }
+  },
+  "targets": {
+    "album-134c6": {
+      "storage": {
+        "default": [
+          "album-134c6.firebasestorage.app"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

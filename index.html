@@ -26,8 +26,7 @@
 
       <div class="polaroid-decor polaroid-right">
         <div class="polaroid-photo">
-          <img src="https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&w=400&q=80"
-            alt="Investigación LICC">
+          <img src="licc.jpg" alt="Investigación LICC">
         </div>
         <span class="polaroid-pin"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
       </div>
@@ -168,9 +167,19 @@
         <button class="close-btn" onclick="closeUploadModal()">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="dropzone" onclick="document.getElementById('file-input').click()">
-          <i class="fa-solid fa-cloud-arrow-up"></i>
-          <p>Haz clic aquí para seleccionar tu imagen o arrástrala</p>
+        <div class="dropzone" id="upload-dropzone" onclick="document.getElementById('file-input').click()">
+          <div id="dropzone-default">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <p>Haz clic aquí para seleccionar tu imagen o arrástrala</p>
+          </div>
+          <div id="dropzone-preview" style="display: none; flex-direction: column; align-items: center; gap: 8px;">
+            <img id="upload-preview-img" src="" alt="Vista previa"
+              style="max-height: 140px; border-radius: 8px; object-fit: contain; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <span id="upload-preview-filename"
+              style="font-size: 12px; font-weight: 600; color: var(--text-main);"></span>
+            <span style="font-size: 11px; color: var(--primary-purple);"><i class="fa-solid fa-rotate"></i> Clic para
+              cambiar foto</span>
+          </div>
           <input type="file" id="file-input" accept="image/*" style="display: none;"
             onchange="handleFileSelected(event)">
         </div>
@@ -190,8 +199,7 @@
         </div>
         <div class="form-group-modal">
           <label>Descripción</label>
-          <textarea id="photo-description" rows="3"
-            placeholder="Cuenta la historia detrás de este recuerdo..."></textarea>
+          <textarea id="photo-description" rows="2" placeholder="Describe..."></textarea>
         </div>
       </div>
       <div class="modal-footer">

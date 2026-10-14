@@ -719,9 +719,12 @@ body {
     background: white;
     width: 100%;
     max-width: 440px;
+    max-height: 90vh;
     border-radius: 16px;
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
 }
 
 .modal-header {
@@ -741,23 +744,25 @@ body {
 }
 
 .modal-body {
-    padding: 20px;
+    padding: 16px 20px;
+    overflow-y: auto;
+    flex: 1;
 }
 
 .dropzone {
     border: 2px dashed #cbd5e1;
     border-radius: 10px;
-    padding: 30px;
+    padding: 16px 12px;
     text-align: center;
     cursor: pointer;
     background: #fafafa;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
 
 .dropzone i {
-    font-size: 32px;
+    font-size: 26px;
     color: var(--primary-purple);
-    margin-bottom: 10px;
+    margin-bottom: 6px;
 }
 
 .dropzone p {
@@ -799,7 +804,7 @@ body {
 }
 
 .form-group-modal {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .form-row-modal {
@@ -818,6 +823,7 @@ body {
     border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: flex-end;
+    flex-shrink: 0;
     gap: 10px;
 }
 

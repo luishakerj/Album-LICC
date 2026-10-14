@@ -27,15 +27,18 @@ rules_version = '2';
 // Helper Functions
 // ===============================================================
 
-// Formato de fecha 'YYYY-MM-DD'function esFechaValida(valor) {
+// Formato de fecha 'YYYY-MM-DD'
+function esFechaValida(valor) {
   return valor is string && valor.matches('^\\d{4}-\\d{2}-\\d{2}$');
 }
 
-// URL http(s) de longitud razonable
+// URL http(s) de longitud razonable o imagen Base64 optimizada (< 800 KB)
 function esUrlValida(valor) {
   return valor is string &&
-         valor.size() <= 2048 &&
-         (valor.matches('^https://.*') || valor.matches('^http://.*'));
+         (
+           (valor.size() <= 2048 && (valor.matches('^https://.*') || valor.matches('^http://.*'))) ||
+           (valor.size() <= 800000 && valor.matches('^data:image/.*'))
+         );
 }
 
 // Comprueba que existe y es un string dentro del rango pedido
